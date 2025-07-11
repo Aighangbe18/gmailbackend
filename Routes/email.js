@@ -36,7 +36,6 @@ router.post('/send', upload.single('attachment'), async (req, res) => {
 
     await newEmail.save();
     req.app.get('io')?.emit('emailReceived', newEmail);
-
     res.status(201).json({ message: 'Email sent', email: newEmail });
   } catch (err) {
     console.error(err);
