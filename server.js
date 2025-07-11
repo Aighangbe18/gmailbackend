@@ -5,6 +5,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
+import path from 'path';
 
 import authRoutes from './Routes/auth.js';
 import emailRoutes from './Routes/email.js';
@@ -14,11 +15,12 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Allowed Origins for CORS
+// ✅ Allowed Origins for CORS (adjust as needed)
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://gmail-gamma-six.vercel.app',
+  'https://your-custom-domain.com', // Optional: add your domain if needed
 ];
 
 // ✅ CORS Middleware
@@ -33,8 +35,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// ✅ Express Middleware
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static('uploads')); // Only need this once
 
 // ✅ API Routes
 app.use('/api/auth', authRoutes);
@@ -55,7 +58,7 @@ const io = new Server(server, {
   },
 });
 
-app.set('io', io); // Make io accessible in routes
+app.set('io', io); // Attach io instance globally
 
 // ✅ Socket.IO Events
 io.on('connection', (socket) => {
@@ -66,7 +69,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ✅ MongoDB Connection & Server Start
+// ✅ MongoDB Connection and Server Start
 const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGO_URI, {

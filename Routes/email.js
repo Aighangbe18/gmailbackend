@@ -1,12 +1,12 @@
-// server/Routes/email.js
+// Routes/email.js
 import express from 'express';
 import multer from 'multer';
-import Email from '../Models/Email.js';
 import path from 'path';
+import Email from '../Models/Email.js';
 
 const router = express.Router();
 
-// Multer storage configuration
+// ✅ Multer configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => {
@@ -35,10 +35,11 @@ router.post('/send', upload.single('attachment'), async (req, res) => {
     });
 
     await newEmail.save();
+
     req.app.get('io')?.emit('emailReceived', newEmail);
     res.status(201).json({ message: 'Email sent', email: newEmail });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Send Email Error:", err.message);
     res.status(500).json({ error: 'Failed to send email' });
   }
 });
@@ -49,21 +50,23 @@ router.get('/inbox/:email', async (req, res) => {
     const inbox = await Email.find({ to: req.params.email }).sort({ createdAt: -1 });
     res.json(inbox);
   } catch (err) {
+    console.error("❌ Inbox Fetch Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Sent Mails
+// ✅ Sent Emails
 router.get('/sent/:email', async (req, res) => {
   try {
     const sent = await Email.find({ from: req.params.email }).sort({ createdAt: -1 });
     res.json(sent);
   } catch (err) {
+    console.error("❌ Sent Fetch Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Read Email by ID
+// ✅ Mark Email as Read
 router.put('/read/:id', async (req, res) => {
   try {
     const updated = await Email.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
@@ -83,7 +86,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// ✅ Get Email by ID (for reading full message)
+// ✅ Get Single Email by ID
 router.get('/:id', async (req, res) => {
   try {
     const email = await Email.findById(req.params.id);
@@ -93,11 +96,16 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// server/routes/email.js
+
+// ✅ Snoozed Emails
 router.get('/snoozed/:email', async (req, res) => {
-  const { email } = req.params;
-  const snoozedEmails = await Email.find({ to: email, labels: "Snoozed" }).sort({ createdAt: -1 });
-  res.json(snoozedEmails);
+  try {
+    const { email } = req.params;
+    const snoozedEmails = await Email.find({ to: email, labels: "Snoozed" }).sort({ createdAt: -1 });
+    res.json(snoozedEmails);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

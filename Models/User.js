@@ -1,4 +1,6 @@
+// models/User.js
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -13,6 +15,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
 
     password: {
@@ -22,11 +25,37 @@ const userSchema = new mongoose.Schema(
     },
 
     avatar: {
-      type: String, // URL or path to uploaded file
-      default: "",  // Optional
+      type: String, // URL or file path to avatar
+      default: null,
+    },
+
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt
+  }
 );
 
-export default mongoose.model('User', userSchema);
+// ✅ Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next(); // Only hash if password changed
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ✅ Instance method to compare passwords
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+const User = mongoose.model('User', userSchema);
+export default User;
